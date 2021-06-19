@@ -1,0 +1,11 @@
+kind: Pod
+apiVersion: v1
+metadata:
+  name: weatherapi
+spec:
+  containers:
+    - name: weatherapi
+      image: tarunsinha/weather-api
+      imagePullPolicy: IfNotPresent
+      ports:
+        - containerPort: 5000

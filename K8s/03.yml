@@ -1,0 +1,131 @@
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: mssql-data
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 1Gi
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: weather-api-deployment
+spec:
+  replicas: 3
+  selector:
+      matchLabels:
+        app: weather-api
+  template:
+    metadata:
+      labels:
+        app: weather-api
+    spec:
+      containers:
+      - image: tarunsinha/weather-api
+        imagePullPolicy: IfNotPresent
+        name: weather-api
+        ports:
+        - containerPort: 80
+          name: weather-api
+        env:
+        - name: ConnectionStrings__SqlServer
+          value: "Server=weather-api-db;Database=WeatherForecastDB;uid=sa;pwd=YG4ZkkGrn7QSz5&;MultipleActiveResultSets=true"
+        - name: ConnectionStrings__Redis
+          value: "weatherapi-redis"
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: weather-api-svc
+spec:
+  selector:
+    app: weather-api
+  type: LoadBalancer
+  ports:
+    - port: 80
+      targetPort: 5000
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: mssql-deployment
+spec:
+  replicas: 1
+  selector:
+      matchLabels:
+        app: weather-api-db
+  template:
+    metadata:
+      labels:
+        app: weather-api-db
+    spec:
+      terminationGracePeriodSeconds: 10
+      containers:
+      - name: weather-api-db
+        image: mcr.microsoft.com/mssql/server:2019-latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 1433
+        env:
+        - name: ACCEPT_EULA
+          value: "Y"
+        - name: SA_PASSWORD
+          value: "YG4ZkkGrn7QSz5&"
+        volumeMounts:
+        - name: mssqldb
+          mountPath: /var/opt/mssql
+      volumes:
+      - name: mssqldb
+        persistentVolumeClaim:
+          claimName: mssql-data
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: weather-api-db
+spec:
+  selector:
+    app: weather-api-db
+  ports:
+    - protocol: TCP 
+      port: 1433
+      targetPort: 1433
+  type: NodePort
+---
+kind: Deployment
+apiVersion: apps/v1
+metadata:
+  name: redis-deployment
+spec:
+  replicas: 1
+  selector:
+      matchLabels:
+        app: weatherapi-redis
+  template:
+    metadata:
+      labels:
+        app: weatherapi-redis
+    spec:
+      terminationGracePeriodSeconds: 10
+      containers:
+      - name: weatherapi-redis
+        image: redis
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 6379
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: weatherapi-redis
+spec:
+  selector:
+    app: weatherapi-redis
+  ports:
+    - protocol: TCP 
+      port: 6379
+      targetPort: 6379
+  type: NodePort

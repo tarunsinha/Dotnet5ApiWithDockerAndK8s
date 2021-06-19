@@ -1,0 +1,13 @@
+version: '3.4'
+
+services:
+  weather-api:
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:80
+    ports:
+      - "62146:80"
+      # - "44304:443"
+    # volumes:
+    #   - ${APPDATA}/ASP.NET/Https:/root/.aspnet/https:ro
+    #   - ${APPDATA}/Microsoft/UserSecrets:/root/.microsoft/usersecrets:ro

@@ -1,0 +1,32 @@
+version: '3.4'
+services:
+  weather-api:
+    image: tarunsinha/weather-api
+    build:
+      context: .
+      dockerfile: weather-api/Dockerfile
+    depends_on: 
+      - weather-api-db
+      - weatherapi-redis
+    environment:
+      - ConnectionStrings__SqlServer=Server=weather-api-db;Database=WeatherForecastDB;uid=sa;pwd=YG4ZkkGrn7QSz5&;MultipleActiveResultSets=true
+      - ConnectionStrings__Redis=weatherapi-redis
+    networks: 
+      - webnet
+  weather-api-db:
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    ports:
+      - "1433:1433"
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "YG4ZkkGrn7QSz5&"
+    networks:
+      - webnet
+  weatherapi-redis:
+    image: redis
+    ports: 
+      - "6379:6379"
+    networks: 
+      webnet:
+networks: 
+  webnet:
